@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Water Polo Coaching Board</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --water-deep: #0a1628;
+    --water-mid: #0d2444;
+    --water-lane: #1a3a5c;
+    --water-line: #2a5a8c;
+    --water-bright: #1e6fb5;
+    --accent: #00c8ff;
+    --accent-glow: rgba(0, 200, 255, 0.3);
+    --offense: #ff6b35;
+    --offense-glow: rgba(255, 107, 53, 0.4);
+    --defense: #e8e8e8;
+    --defense-glow: rgba(232, 232, 232, 0.3);
+    --goal-color: #ffd700;
+    --ball-color: #ffffff;
+    --text: #c8dff0;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background: var(--water-deep);
+    font-family: 'DM Mono', monospace;
+    color: var(--text);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  header {
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(0,200,255,0.15);
+    background: rgba(10,22,40,0.9);
+    z-index: 10;
+    flex-shrink: 0;
+  }
+
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    text-shadow: 0 0 20px var(--accent-glow);
+  }
+
+  header .subtitle {
+    font-size: 0.65rem;
+    color: rgba(200,223,240,0.4);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tool-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text);
+    padding: 6px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .tool-btn:hover {
+    background: rgba(0,200,255,0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .tool-btn.active {
+    background: rgba(0,200,255,0.15);
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+
+  .tool-btn.danger:hover {
+    background: rgba(255,80,80,0.15);
+    border-color: #ff5050;
+    color: #ff5050;
+  }
+
+  .main {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .sidebar {
+    width: 130px;
+    background: rgba(13,36,68,0.7);
+    border-right: 1px solid rgba(0,200,255,0.1);
+    padding: 16px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+
+  .sidebar-label {
+    font-size: 0.55rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(200,223,240,0.4);
+    margin-bottom: 4px;
+  }
+
+  .piece-shelf {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .shelf-piece {
+    width: 100%;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: grab;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+    transition: all 0.15s;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: rgba(200,223,240,0.6);
+  }
+
+  .shelf-piece:hover {
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(255,255,255,0.2);
+    transform: translateX(2px);
+  }
+
+  .shelf-piece:active { cursor: grabbing; }
+
+  .shelf-piece .icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+
+  .icon-offense {
+    background: var(--offense);
+    color: white;
+    box-shadow: 0 0 8px var(--offense-glow);
+  }
+
+  .icon-defense {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    filter: drop-shadow(0 0 4px var(--defense));
+    position: relative;
+  }
+
+  .icon-defense::before,
+  .icon-defense::after {
+    content: '';
+    position: absolute;
+    width: 90%;
+    height: 2.5px;
+    background: var(--defense);
+    top: 50%;
+    left: 5%;
+    border-radius: 2px;
+  }
+
+  .icon-defense::before { transform: translateY(-50%) rotate(45deg); }
+  .icon-defense::after  { transform: translateY(-50%) rotate(-45deg); }
+
+  .icon-ball {
+    background: #ffe600;
+    border: 1px solid #ccb800;
+    box-shadow: 0 0 6px rgba(255,230,0,0.4);
+  }
+
+  .icon-draw {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.3);
+    color: rgba(255,255,255,0.8);
+    font-size: 1rem;
+    font-weight: bold;
+  }
+
+  #btn-draw.active .icon-draw {
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+
+  #btn-draw.active {
+    background: rgba(0,200,255,0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .divider {
+    height: 1px;
+    background: rgba(0,200,255,0.1);
+    margin: 4px 0;
+  }
+
+  .canvas-wrap {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Subtle water caustic effect */
+  .canvas-wrap::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse at 20% 50%, rgba(0,100,200,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 30%, rgba(0,150,255,0.06) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  #board {
+    position: relative;
+    background: linear-gradient(180deg, #0d3060 0%, #0a2448 40%, #0d3060 100%);
+    border: 2px solid rgba(0,200,255,0.3);
+    box-shadow: 
+      0 0 40px rgba(0,100,200,0.4),
+      0 0 80px rgba(0,50,150,0.2),
+      inset 0 0 60px rgba(0,50,120,0.3);
+    overflow: hidden;
+  }
+
+  #board.draw-mode { cursor: crosshair; }
+  #board.draw-mode .piece { pointer-events: none; }
+
+  .drawn-line {
+    stroke: rgba(255,255,255,0.85);
+    stroke-width: 2;
+    stroke-linecap: round;
+    cursor: pointer;
+    transition: stroke 0.1s;
+  }
+  .drawn-line:hover { stroke: #ff5050; }
+
+  .preview-line {
+    stroke: rgba(0,200,255,0.6);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-dasharray: 6 4;
+  }
+
+  .draw-dot {
+    fill: var(--accent);
+    filter: drop-shadow(0 0 4px var(--accent));
+  }
+
+  #pool-svg {
+    position: absolute;
+    top: 0; left: 0;
+    pointer-events: none;
+  }
+
+  .piece {
+    position: absolute;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    transition: box-shadow 0.1s, transform 0.1s;
+    z-index: 5;
+    transform: translate(-50%, -50%);
+  }
+
+  .piece:active { cursor: grabbing; }
+
+  .piece.dragging {
+    z-index: 100;
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+
+  .piece-o {
+    border-radius: 50%;
+    background: var(--offense);
+    box-shadow: 0 0 12px var(--offense-glow), 0 2px 8px rgba(0,0,0,0.5);
+  }
+
+  .piece-x {
+    border-radius: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    filter: drop-shadow(0 0 5px var(--defense));
+  }
+
+  .piece-x::before,
+  .piece-x::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 2.5px;
+    background: var(--defense);
+    top: 50%;
+    left: 0;
+    border-radius: 2px;
+  }
+
+  .piece-x::before { transform: translateY(-50%) rotate(45deg); }
+  .piece-x::after  { transform: translateY(-50%) rotate(-45deg); }
+
+  .piece-ball {
+    border-radius: 50%;
+    background: #ffe600;
+    border: 1px solid #ccb800;
+    box-shadow: 0 0 8px rgba(255,230,0,0.5), 0 2px 8px rgba(0,0,0,0.5);
+  }
+
+  .piece:hover { filter: brightness(1.2); }
+
+  .piece.selected {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  .delete-hint {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,80,80,0.15);
+    border: 1px solid rgba(255,80,80,0.4);
+    color: rgba(255,130,130,0.9);
+    padding: 6px 18px;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .delete-hint.visible { opacity: 1; }
+
+  .status-bar {
+    padding: 5px 24px;
+    border-top: 1px solid rgba(0,200,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.6rem;
+    color: rgba(200,223,240,0.35);
+    letter-spacing: 0.12em;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>POLO BOARD</h1>
+    <div class="subtitle">Digital Coaching Whiteboard</div>
+  </div>
+  <div class="toolbar">
+    <button class="tool-btn active" id="btn-full" onclick="setMode('full')">Full Court</button>
+    <button class="tool-btn" id="btn-half" onclick="setMode('half')">Half Court</button>
+    <div style="width:1px;height:20px;background:rgba(255,255,255,0.1);margin:0 4px;"></div>
+    <button class="tool-btn" id="btn-clear-pieces" onclick="clearPieces()">Clear All</button>
+    <button class="tool-btn" id="btn-reset" onclick="resetBoard()">Reset</button>
+  </div>
+</header>
+
+<div class="main">
+  <div class="sidebar">
+    <div>
+      <div class="sidebar-label">Offense</div>
+      <div class="piece-shelf">
+        <div class="shelf-piece" draggable="true" data-type="o" data-num="1">
+          <div class="icon icon-offense">O</div> Player
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <div class="sidebar-label">Defense</div>
+      <div class="piece-shelf">
+        <div class="shelf-piece" draggable="true" data-type="x" data-num="1">
+          <div class="icon icon-defense"></div> Player
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <div class="sidebar-label">Objects</div>
+      <div class="piece-shelf">
+        <div class="shelf-piece" draggable="true" data-type="ball">
+          <div class="icon icon-ball"></div> Ball
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <div class="sidebar-label">Draw</div>
+      <div class="piece-shelf">
+        <div class="shelf-piece" id="btn-draw" onclick="toggleDrawMode()" style="cursor:pointer;">
+          <div class="icon icon-draw">→</div> Arrow
+        </div>
+        <div class="shelf-piece" onclick="clearLines()" style="cursor:pointer; color:rgba(255,100,100,0.7); border-color:rgba(255,100,100,0.2);">
+          <div class="icon" style="color:rgba(255,100,100,0.7);font-size:0.9rem;">✕</div> Clear
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <div class="sidebar-label">Counts</div>
+      <div id="count-display" style="font-size:0.62rem; line-height:1.8; color:rgba(200,223,240,0.5);">
+        O: 0 &nbsp; X: 0 &nbsp; Ball: 0
+      </div>
+    </div>
+  </div>
+
+  <div class="canvas-wrap" id="canvas-wrap">
+    <div id="board">
+      <svg id="pool-svg"></svg>
+      <svg id="lines-svg" style="position:absolute;top:0;left:0;pointer-events:none;overflow:visible;"></svg>
+      <svg id="preview-svg" style="position:absolute;top:0;left:0;pointer-events:none;overflow:visible;"></svg>
+    </div>
+  </div>
+</div>
+
+<div class="status-bar">
+  <span id="status-hint">DRAG pieces from sidebar onto the pool · RIGHT-CLICK to remove</span>
+  <span id="mode-label">WATER POLO — 30m × 20m POOL</span>
+</div>
+
+<div class="delete-hint" id="delete-hint">RIGHT-CLICK TO REMOVE</div>
+
+<script>
+const board = document.getElementById('board');
+const svg   = document.getElementById('pool-svg');
+
+let currentMode = 'full'; // 'full' | 'half'
+let POOL_W = 700;
+let POOL_H = 420;
+
+let pieces = [];
+let pieceIdCounter = 0;
+let offenseCount = 0, defenseCount = 0;
+
+// ─── Dynamic sizing ───────────────────────────────────────────────
+const PAD = 24; // pixels of breathing room on each side
+
+function calcDimensions(mode) {
+  const wrap = document.getElementById('canvas-wrap');
+  const availW = wrap.clientWidth  - PAD * 2;
+  const availH = wrap.clientHeight - PAD * 2;
+
+  // Aspect ratios: full = 5:3 landscape, half = 3:2 landscape (wider than tall)
+  const ratio = mode === 'full' ? (5/3) : (3/2);
+
+  let w = availW;
+  let h = Math.round(w / ratio);
+  if (h > availH) { h = availH; w = Math.round(h * ratio); }
+
+  return { w, h };
+}
+
+// ─── Mode switching ───────────────────────────────────────────────
+function setMode(mode) {
+  currentMode = mode;
+  clearPieces();
+  applyDimensions(mode);
+
+  document.getElementById('btn-full').classList.toggle('active', mode === 'full');
+  document.getElementById('btn-half').classList.toggle('active', mode === 'half');
+  document.getElementById('mode-label').textContent =
+    mode === 'full' ? 'WATER POLO — FULL COURT' : 'WATER POLO — HALF COURT';
+
+  drawPool();
+}
+
+function applyDimensions(mode) {
+  const { w, h } = calcDimensions(mode);
+  POOL_W = w; POOL_H = h;
+  board.style.width  = POOL_W + 'px';
+  board.style.height = POOL_H + 'px';
+  svg.setAttribute('width',   POOL_W);
+  svg.setAttribute('height',  POOL_H);
+  svg.setAttribute('viewBox', `0 0 ${POOL_W} ${POOL_H}`);
+  scalePieces();
+  syncLinesSvgSize();
+}
+
+// ─── Scale pieces to pool size ────────────────────────────────────
+function getPieceSizes() {
+  // Base sizes relative to a reference pool of 700x420
+  const ref = 700;
+  const scale = POOL_W / ref;
+  return {
+    player:   Math.round(28 * scale),  // O and X
+    ball:     Math.round(20 * scale),
+  };
+}
+
+function applyPieceSize(el) {
+  const type = el.dataset.type;
+  const s = getPieceSizes();
+  if (type === 'o' || type === 'x') {
+    el.style.width  = s.player + 'px';
+    el.style.height = s.player + 'px';
+  } else if (type === 'ball') {
+    el.style.width  = s.ball + 'px';
+    el.style.height = s.ball + 'px';
+  }
+}
+
+function scalePieces() {
+  pieces.forEach(p => applyPieceSize(p.el));
+}
+
+// Resize handler
+window.addEventListener('resize', () => {
+  applyDimensions(currentMode);
+  drawPool();
+});
+
+// ─── SVG helpers ─────────────────────────────────────────────────
+function mkLine(x1,y1,x2,y2,color,width=1.5,dash='') {
+  const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+  l.setAttribute('x1',x1); l.setAttribute('y1',y1);
+  l.setAttribute('x2',x2); l.setAttribute('y2',y2);
+  l.setAttribute('stroke',color);
+  l.setAttribute('stroke-width',width);
+  if (dash) l.setAttribute('stroke-dasharray',dash);
+  svg.appendChild(l);
+}
+
+function mkText(x, y, text, color, anchor='middle', size=9) {
+  const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+  t.setAttribute('x', x); t.setAttribute('y', y);
+  t.setAttribute('fill', color); t.setAttribute('font-size', size);
+  t.setAttribute('font-family','DM Mono, monospace');
+  t.setAttribute('text-anchor', anchor);
+  t.setAttribute('letter-spacing','0.05em');
+  t.textContent = text;
+  svg.appendChild(t);
+}
+
+function mkPoly(pts, fill, stroke, strokeW=2) {
+  const p = document.createElementNS('http://www.w3.org/2000/svg','polyline');
+  p.setAttribute('points', pts);
+  p.setAttribute('fill', fill);
+  p.setAttribute('stroke', stroke);
+  p.setAttribute('stroke-width', strokeW);
+  svg.appendChild(p);
+}
+
+// ─── Draw pool ────────────────────────────────────────────────────
+function drawPool() {
+  svg.innerHTML = '';
+  if (currentMode === 'full') drawFullCourt();
+  else drawHalfCourt();
+}
+
+function drawFullCourt() {
+  const W = POOL_W, H = POOL_H;
+  const pad = 40;
+  const fieldW = W - 2 * pad;
+
+  // Water shimmer
+  for (let y = 20; y < H; y += 28)
+    mkLine(0,y,W,y,'rgba(255,255,255,0.03)',1);
+
+  function mToX(m) { return pad + (m/30)*fieldW; }
+  function vLine(x,color,dash='',w=1.5) { mkLine(x,0,x,H,color,w,dash); }
+  function lbl(x,txt,color,side='top') {
+    mkText(x, side==='top'?12:H-4, txt, color);
+  }
+
+  // Half line
+  vLine(W/2,'rgba(255,255,255,0.55)','',2);
+
+  // 2m
+  vLine(mToX(2),'rgba(255,50,50,0.7)','',1.5);
+  vLine(mToX(28),'rgba(255,50,50,0.7)','',1.5);
+  lbl(mToX(2),'2m','rgba(255,100,100,0.7)');
+  lbl(mToX(28),'2m','rgba(255,100,100,0.7)');
+
+  // 5m
+  vLine(mToX(5),'rgba(255,200,0,0.6)','6 4',1.5);
+  vLine(mToX(25),'rgba(255,200,0,0.6)','6 4',1.5);
+  lbl(mToX(5),'5m','rgba(255,200,0,0.65)');
+  lbl(mToX(25),'5m','rgba(255,200,0,0.65)');
+
+  // 7m
+  vLine(mToX(7),'rgba(100,200,255,0.45)','3 5',1.2);
+  vLine(mToX(23),'rgba(100,200,255,0.45)','3 5',1.2);
+  lbl(mToX(7),'7m','rgba(100,200,255,0.5)');
+  lbl(mToX(23),'7m','rgba(100,200,255,0.5)');
+
+  // Border
+  const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  rect.setAttribute('x',1); rect.setAttribute('y',1);
+  rect.setAttribute('width',W-2); rect.setAttribute('height',H-2);
+  rect.setAttribute('fill','none');
+  rect.setAttribute('stroke','rgba(0,200,255,0.5)');
+  rect.setAttribute('stroke-width','2');
+  svg.appendChild(rect);
+
+  // Goals
+  const gH = H*0.28, gY1=(H-gH)/2, gY2=gY1+gH;
+  const gD = 18, gc = 'rgba(255,215,0,0.7)', gf = 'rgba(255,215,0,0.06)';
+  mkPoly(`0,${gY1} ${gD},${gY1} ${gD},${gY2} 0,${gY2}`,gf,gc);
+  mkPoly(`${W},${gY1} ${W-gD},${gY1} ${W-gD},${gY2} ${W},${gY2}`,gf,gc);
+}
+
+function drawHalfCourt() {
+  const W = POOL_W, H = POOL_H;
+  const padTop = 40;   // goal end at top
+  const fieldH = H - padTop;
+
+  // Water shimmer
+  for (let y = 20; y < H; y += 28)
+    mkLine(0,y,W,y,'rgba(255,255,255,0.03)',1);
+
+  // Convert meters from goal end → Y coordinate (goal at top)
+  function mToY(m) { return padTop + (m/15)*fieldH; }
+  function hLine(y,color,dash='',w=1.5) { mkLine(0,y,W,y,color,w,dash); }
+  function lbl(y,txt,color) {
+    mkText(W-6, y-3, txt, color, 'end', 9);
+  }
+
+  // Half line (bottom edge of half court)
+  hLine(H,'rgba(255,255,255,0.55)','',2);
+
+  // 2m
+  hLine(mToY(2),'rgba(255,50,50,0.7)','',1.5);
+  lbl(mToY(2),'2m','rgba(255,100,100,0.7)');
+
+  // 5m
+  hLine(mToY(5),'rgba(255,200,0,0.6)','6 4',1.5);
+  lbl(mToY(5),'5m','rgba(255,200,0,0.65)');
+
+  // 7m
+  hLine(mToY(7),'rgba(100,200,255,0.45)','3 5',1.2);
+  lbl(mToY(7),'7m','rgba(100,200,255,0.5)');
+
+  // Border
+  const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  rect.setAttribute('x',1); rect.setAttribute('y',1);
+  rect.setAttribute('width',W-2); rect.setAttribute('height',H-2);
+  rect.setAttribute('fill','none');
+  rect.setAttribute('stroke','rgba(0,200,255,0.5)');
+  rect.setAttribute('stroke-width','2');
+  svg.appendChild(rect);
+
+  // Goal at top centre
+  const gW = W*0.35, gX1=(W-gW)/2, gX2=gX1+gW;
+  const gD = 18, gc='rgba(255,215,0,0.7)', gf='rgba(255,215,0,0.06)';
+  mkPoly(`${gX1},0 ${gX1},${gD} ${gX2},${gD} ${gX2},0`,gf,gc);
+
+  // Half-court label at bottom
+  mkText(W/2, H-5, '— HALF —', 'rgba(255,255,255,0.25)', 'middle', 8);
+}
+
+// ─── Line drawing ────────────────────────────────────────────────
+const linesSvg   = document.getElementById('lines-svg');
+const previewSvg = document.getElementById('preview-svg');
+
+function syncLinesSvgSize() {
+  linesSvg.setAttribute('width', POOL_W);
+  linesSvg.setAttribute('height', POOL_H);
+  previewSvg.setAttribute('width', POOL_W);
+  previewSvg.setAttribute('height', POOL_H);
+  // Ensure arrowhead marker exists
+  if (!linesSvg.querySelector('#arrowhead')) {
+    const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+    defs.innerHTML = `
+      <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="rgba(255,255,255,0.85)" />
+      </marker>
+      <marker id="arrowhead-hover" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#ff5050" />
+      </marker>
+      <marker id="arrowhead-preview" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="rgba(0,200,255,0.6)" />
+      </marker>`;
+    linesSvg.insertBefore(defs, linesSvg.firstChild);
+  }
+  if (!previewSvg.querySelector('#arrowhead-prev-defs')) {
+    const defs2 = document.createElementNS('http://www.w3.org/2000/svg','defs');
+    defs2.setAttribute('id','arrowhead-prev-defs');
+    defs2.innerHTML = `
+      <marker id="arrowhead-preview2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="rgba(0,200,255,0.6)" />
+      </marker>`;
+    previewSvg.insertBefore(defs2, previewSvg.firstChild);
+  }
+}
+syncLinesSvgSize();
+let drawMode    = false;
+let lineStart   = null;   // {x, y} of first click
+let drawnLines  = [];     // [{x1,y1,x2,y2,el}]
+let dotEl       = null;   // the start-point dot
+let snapIndicator = null; // cyan circle shown at snap point
+const SNAP_RADIUS = 14;   // px distance to snap
+
+// Returns snapped {x,y} if near any line endpoint, else original {x,y}
+function getSnapped(x, y) {
+  for (const l of drawnLines) {
+    for (const pt of [{x: l.x1, y: l.y1}, {x: l.x2, y: l.y2}]) {
+      const dx = x - pt.x, dy = y - pt.y;
+      if (Math.sqrt(dx*dx + dy*dy) <= SNAP_RADIUS) return { x: pt.x, y: pt.y, snapped: true };
+    }
+  }
+  return { x, y, snapped: false };
+}
+
+function updateSnapIndicator(x, y, snapped) {
+  if (snapIndicator) snapIndicator.remove();
+  snapIndicator = null;
+  if (snapped) {
+    snapIndicator = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    snapIndicator.setAttribute('cx', x); snapIndicator.setAttribute('cy', y);
+    snapIndicator.setAttribute('r', 7);
+    snapIndicator.setAttribute('fill', 'none');
+    snapIndicator.setAttribute('stroke', 'var(--accent)');
+    snapIndicator.setAttribute('stroke-width', '1.5');
+    snapIndicator.setAttribute('opacity', '0.8');
+    previewSvg.appendChild(snapIndicator);
+  }
+}
+
+function toggleDrawMode() {
+  drawMode = !drawMode;
+  lineStart = null;
+  previewSvg.innerHTML = '';
+  dotEl = null;
+  snapIndicator = null;
+  board.classList.toggle('draw-mode', drawMode);
+  const btnDraw = document.getElementById('btn-draw');
+  btnDraw.classList.toggle('active', drawMode);
+  document.getElementById('status-hint').textContent = drawMode
+    ? 'DRAW MODE: Click to set start · Click again to finish · RIGHT-CLICK line to remove'
+    : 'DRAG pieces from sidebar onto the pool · RIGHT-CLICK to remove';
+}
+
+
+
+// Intercept board clicks for draw mode
+board.addEventListener('click', e => {
+  if (!drawMode) return;
+  // Ignore if click was on a piece
+  if (e.target.classList.contains('piece')) return;
+
+  const rect = board.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  const snappedPos = getSnapped(x, y);
+
+  if (!lineStart) {
+    // First click — set start point (snapped if near endpoint)
+    lineStart = { x: snappedPos.x, y: snappedPos.y };
+    // Draw a dot marker
+    dotEl = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    dotEl.setAttribute('cx', snappedPos.x); dotEl.setAttribute('cy', snappedPos.y);
+    dotEl.setAttribute('r', 4);
+    dotEl.setAttribute('class', 'draw-dot');
+    previewSvg.appendChild(dotEl);
+  } else {
+    // Second click — commit the line (snapped if near endpoint)
+    const x1 = lineStart.x, y1 = lineStart.y;
+    const x2 = snappedPos.x, y2 = snappedPos.y;
+
+    const lineEl = document.createElementNS('http://www.w3.org/2000/svg','line');
+    lineEl.setAttribute('x1', x1); lineEl.setAttribute('y1', y1);
+    lineEl.setAttribute('x2', x2); lineEl.setAttribute('y2', y2);
+    lineEl.setAttribute('class', 'drawn-line');
+    lineEl.setAttribute('marker-end', 'url(#arrowhead)');
+    linesSvg.appendChild(lineEl);
+
+    const id = Date.now();
+    drawnLines.push({ id, x1, y1, x2, y2, el: lineEl });
+
+    // Right-click to remove
+    lineEl.style.pointerEvents = 'stroke';
+    lineEl.addEventListener('contextmenu', e2 => {
+      e2.preventDefault();
+      removeLine(id);
+    });
+
+    // Reset for next line
+    lineStart = null;
+    previewSvg.innerHTML = '';
+    dotEl = null;
+  }
+});
+
+// Preview line follows mouse + snap indicator
+board.addEventListener('mousemove', e => {
+  if (!drawMode) return;
+  const rect = board.getBoundingClientRect();
+  const rawX = e.clientX - rect.left;
+  const rawY = e.clientY - rect.top;
+  const { x, y, snapped } = getSnapped(rawX, rawY);
+
+  if (!lineStart) {
+    // Show snap ring even before first click
+    updateSnapIndicator(x, y, snapped);
+    return;
+  }
+
+  // Remove old preview line (keep dot and snap indicator)
+  const existing = previewSvg.querySelector('.preview-line');
+  if (existing) existing.remove();
+  updateSnapIndicator(x, y, snapped);
+
+  const prev = document.createElementNS('http://www.w3.org/2000/svg','line');
+  prev.setAttribute('x1', lineStart.x); prev.setAttribute('y1', lineStart.y);
+  prev.setAttribute('x2', x);           prev.setAttribute('y2', y);
+  prev.setAttribute('class', 'preview-line');
+  prev.setAttribute('marker-end', 'url(#arrowhead-preview2)');
+  previewSvg.appendChild(prev);
+});
+
+function removeLine(id) {
+  const idx = drawnLines.findIndex(l => l.id === id);
+  if (idx === -1) return;
+  drawnLines[idx].el.remove();
+  drawnLines.splice(idx, 1);
+}
+
+function clearLines() {
+  drawnLines.forEach(l => l.el.remove());
+  drawnLines = [];
+  previewSvg.innerHTML = '';
+  lineStart = null; dotEl = null;
+}
+
+// ─── Initial render ───────────────────────────────────────────────
+applyDimensions('full');
+drawPool();
+
+// ─── Drag from sidebar ────────────────────────────────────────────
+let dragType = null;
+
+document.querySelectorAll('.shelf-piece').forEach(el => {
+  el.addEventListener('dragstart', e => {
+    dragType = el.dataset.type;
+    e.dataTransfer.effectAllowed = 'copy';
+  });
+  el.addEventListener('dragend', () => { dragType = null; });
+});
+
+board.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+
+board.addEventListener('drop', e => {
+  e.preventDefault();
+  if (!dragType) return;
+  const rect = board.getBoundingClientRect();
+  addPiece(dragType, e.clientX - rect.left, e.clientY - rect.top);
+});
+
+// ─── Piece management ─────────────────────────────────────────────
+function addPiece(type, x, y) {
+  const id = ++pieceIdCounter;
+  if (type === 'o') offenseCount++;
+  if (type === 'x') defenseCount++;
+
+  const el = document.createElement('div');
+  el.className = `piece piece-${type}`;
+  el.dataset.id = id;
+  el.dataset.type = type;
+  el.style.left = x + 'px';
+  el.style.top  = y + 'px';
+
+  applyPieceSize(el);
+  board.appendChild(el);
+  pieces.push({ id, type, el });
+  makeDraggable(el);
+
+  el.addEventListener('contextmenu', e => { e.preventDefault(); removePiece(id); });
+  updateCounts();
+}
+
+function removePiece(id) {
+  const idx = pieces.findIndex(p => p.id === id);
+  if (idx === -1) return;
+  pieces[idx].el.remove();
+  pieces.splice(idx, 1);
+  updateCounts();
+}
+
+function updateCounts() {
+  const o = pieces.filter(p=>p.type==='o').length;
+  const x = pieces.filter(p=>p.type==='x').length;
+  const b = pieces.filter(p=>p.type==='ball').length;
+  document.getElementById('count-display').innerHTML =
+    `O: ${o} &nbsp; X: ${x}<br>Ball: ${b}`;
+}
+
+function clearPieces() {
+  pieces.forEach(p => p.el.remove());
+  pieces = []; offenseCount = 0; defenseCount = 0;
+  clearLines();
+  updateCounts();
+}
+
+function resetBoard() { clearPieces(); }
+
+// ─── Drag pieces on board ─────────────────────────────────────────
+function makeDraggable(el) {
+  let startX, startY, startLeft, startTop;
+
+  el.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    startX = e.clientX; startY = e.clientY;
+    startLeft = parseInt(el.style.left);
+    startTop  = parseInt(el.style.top);
+    el.classList.add('dragging');
+
+    function onMove(e) {
+      let newX = startLeft + (e.clientX - startX);
+      let newY = startTop  + (e.clientY - startY);
+      newX = Math.max(0, Math.min(POOL_W, newX));
+      newY = Math.max(0, Math.min(POOL_H, newY));
+      el.style.left = newX + 'px';
+      el.style.top  = newY + 'px';
+    }
+
+    function onUp() {
+      el.classList.remove('dragging');
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+</script>
+</body>
+</html>
